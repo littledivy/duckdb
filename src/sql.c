@@ -7,6 +7,7 @@ void duckffi_dfree(void* ptr) { duckdb_free(ptr); }
 void duckffi_free_blob(duckdb_blob* blob) { duckdb_free(blob->data); free(blob); }
 void duckffi_close(duckdb_database db) { duckdb_database d = db; duckdb_close(&d); }
 void duckffi_free_result(duckdb_result* result) { duckdb_destroy_result(result); free(result); }
+void duckffi_reset_result(duckdb_result* result) { duckdb_destroy_result(result); }
 void duckffi_disconnect(duckdb_connection con) { duckdb_connection c = con; duckdb_disconnect(&c); }
 void duckffi_free_ltype(duckdb_logical_type ltype) { duckdb_logical_type t = ltype; duckdb_destroy_logical_type(&t); }
 void duckffi_free_prepare(duckdb_prepared_statement prepare) { duckdb_prepared_statement p = prepare; duckdb_destroy_prepare(&p); }
@@ -32,6 +33,7 @@ duckdb_result* duckffi_query_prepared(duckdb_prepared_statement prepare) {
 }
 
 void* duckffi_blob_data(duckdb_blob* blob) { return blob->data; }
+uint32_t duckffi_execute_prepared(duckdb_prepared_statement prepared, duckdb_result* res) { return duckdb_execute_prepared(prepared, res); }
 uint32_t duckffi_blob_size(duckdb_blob* blob) { return blob->size; }
 uint32_t duckffi_row_count(duckdb_result* result) { return duckdb_row_count(result); }
 uint64_t duckffi_row_count_slow(duckdb_result* result) { return duckdb_row_count(result); }
