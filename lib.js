@@ -55,6 +55,7 @@ const { symbols: duck } = await dlopen(options, {
   duckffi_open: { parameters: ["u8", "pointer"], result: "pointer" },
   duckffi_query: { parameters: ["pointer", "pointer"], result: "pointer" },
   duckffi_free_result: { parameters: ["pointer"], result: "void" },
+  duckffi_reset_result: { parameters: ["pointer"], result: "void" },
   duckffi_column_count: { parameters: ["pointer"], result: "u32" },
   duckffi_result_error: { parameters: ["pointer"], result: "pointer" },
   duckffi_free_prepare: { parameters: ["pointer"], result: "void" },
@@ -62,6 +63,7 @@ const { symbols: duck } = await dlopen(options, {
   duckffi_prepare: { parameters: ["pointer", "pointer"], result: "pointer" },
   duckffi_row_count_slow: { parameters: ["pointer"], result: "u64" },
   duckffi_query_prepared: { parameters: ["pointer"], result: "pointer" },
+  duckffi_execute_prepared: { parameters: ["pointer", "pointer"], result: "u32" },
   duckffi_row_count_large: { parameters: ["pointer"], result: "u8" },
   duckffi_param_type: { parameters: ["pointer", "u32"], result: "u32" },
   duckffi_enum_string: { parameters: ["pointer", "u32"], result: "pointer" },
@@ -825,7 +827,7 @@ export function prepare(c, query) {
 
       if (e) {
         const s = getCString(e);
-        throw (duck.duckffi_free_result(r), new Error(s));
+        throw (duck.duckffi_reset_result(r), new Error(s));
       }
     }
 
@@ -851,7 +853,7 @@ export function prepare(c, query) {
           function toArrayBuffer(v, start, offset) { 
             const view = new Deno.UnsafePointerView(v);
           }
-          const { p, _tm, duck, utf8e, bitmap_get } = this;
+          const { p, _tm, duck, utf8e, bitmap_get, r } = this;
 
           ${
       names.map((name, offset) => `
@@ -866,53 +868,34 @@ export function prepare(c, query) {
             }
           `).join("\n")
     }
-
-          const r = duck.duckffi_query_prepared(p);
-
-          {
+          if (duck.duckffi_execute_prepared(p, r) === 1) {
             const e = duck.duckffi_result_error(r);
-
             if (e) {
               const s = new CString(e);
-              throw (duck.duckffi_free_result(r), new Error(s));
+              throw (duck.duckffi_reset_result(r), new Error(s));
             }
           }
 
           const rows = duck.duckffi_row_count(r);
+          if (0 === rows) return (duck.duckffi_reset_result(r), []);
           const ltypes = new Array(\${ltypes.length});
-          if (0 === rows) return (duck.duckffi_free_result(r), []);
 
           \${types.map((type, column) => \`
             const _tm_\${column}_\${type} = _tm[\${type}](r, ltypes, \${column});
-            const nulls_\${column} = duck.duckffi_null_bitmap(r, rows, \${column});
-            const nulls_view_\${column} = new Uint8Array(toArrayBuffer(nulls_\${column}, 0, Math.ceil(rows / 8)));
           \`).join('\\n')}
 
-          try {
             const a = new Array(rows);
-
             for (let offset = 0; rows > offset; offset++) {
               a[offset] = {
                 \${names.map((name, column) => \`
-                  "\${name}": (bitmap_get(nulls_view_\${column}, offset)) ? null : _tm_\${column}_\${types[column]}(offset, \${column}),
+                    "\${name}": duck.duckffi_value_is_null(r, \${column}, offset) ? null : _tm_\${column}_\${types[column]}(offset, \${column}),
                 \`.trim()).join('\\n')}
               };
             }
-
+            duck.duckffi_reset_result(r);
             return a;
-          } finally {
-            for (let offset = 0; \${ltypes.length} > offset; offset++) {
-              const x = ltypes[offset];
-              if (x) duck.duckffi_free_ltype(x);
-            }
+        \`).bind({ p, _tm, ctx, duck, utf8e, bitmap_get, r });
 
-            \${new Array(columns).fill(0).map((_, column) => \`
-              duck.duckffi_free(nulls_\${column});
-            \`).join('\\n')}
-
-            duck.duckffi_free_result(r);
-          }
-        \`).bind({ p, _tm, ctx, duck, utf8e, bitmap_get });
       }
 
       for (let offset = 0; rows > offset; offset++) {
@@ -936,7 +919,7 @@ export function prepare(c, query) {
         if (x) duck.duckffi_free_ltype(x);
       }
 
-      duck.duckffi_free_result(r);
+      duck.duckffi_reset_result(r);
     }
   `,
   ).bind({ p, _tm, ctx, duck, utf8e, bitmap_get });

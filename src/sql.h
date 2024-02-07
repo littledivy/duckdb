@@ -6,6 +6,7 @@ void duckffi_close(duckdb_database db);
 void duckffi_free_blob(duckdb_blob* blob);
 void duckffi_disconnect(duckdb_connection con);
 void duckffi_free_result(duckdb_result* result);
+void duckffi_reset_result(duckdb_result* result);
 void duckffi_free_ltype(duckdb_logical_type ltype);
 void duckffi_free_prepare(duckdb_prepared_statement prepare);
 
@@ -15,6 +16,7 @@ duckdb_result* duckffi_query(duckdb_connection con, const char* query);
 duckdb_result* duckffi_query_prepared(duckdb_prepared_statement prepare);
 duckdb_prepared_statement duckffi_prepare(duckdb_connection con, const char* query);
 
+uint32_t duckffi_execute_prepared(duckdb_prepared_statement prepared, duckdb_result* res);
 void* duckffi_blob_data(duckdb_blob* blob);
 uint32_t duckffi_blob_size(duckdb_blob* blob);
 uint32_t duckffi_row_count(duckdb_result* result);
