@@ -1,5 +1,8 @@
 {
   "name": "@divy/duckdb",
   "version": "0.2.1",
-  "exports": "./mod.ts"
+  "exports": "./mod.ts",
+  "imports": {
+    "std/": "https://deno.land/std@0.224.0/"
+  }
 }

@@ -1,4 +1,4 @@
-import { assertObjectMatch } from "https://deno.land/std@0.195.0/testing/asserts.ts";
+import { assertObjectMatch } from "std/assert/mod.ts";
 
 import { open } from "./mod.ts";
 

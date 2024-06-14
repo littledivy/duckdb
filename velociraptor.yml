@@ -1,0 +1,5 @@
+scripts:
+  test:
+    cmd: deno test --allow-env --allow-read --allow-ffi --unstable-ffi
+  test:dev:
+    cmd: DENO_DUCKDB_DEV=true deno test --allow-env --allow-read --allow-ffi --allow-write --unstable-ffi

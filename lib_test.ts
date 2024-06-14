@@ -1,5 +1,5 @@
 import { connect, open, prepare, query } from "./lib.js";
-import { assertEquals } from "https://deno.land/std@0.149.0/testing/asserts.ts";
+import { assertEquals } from "std/assert/mod.ts";
 
 Deno.test("select * from test", () => {
   const db = open(":memory:");
